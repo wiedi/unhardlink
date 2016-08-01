@@ -35,12 +35,12 @@ int cp(int out_fd, int in_fd) {
 	ssize_t n;
 
 	while(1) {
-		n = read(in_fd, &b[0], sizeof(b));
+		n = read(in_fd, b, sizeof(b));
 		if(!n)
 			return 0;
 		if(n < 0)
 			return -1;
-		if(write(out_fd, &b[0], n) != n)
+		if(write(out_fd, b, n) != n)
 			return -1;
 	}
 }
