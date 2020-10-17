@@ -52,6 +52,7 @@ int cp(int out_fd, int in_fd) {
 int unhardlink(char *fn) {
 	int ret = -1;
 	struct stat s;
+	struct timespec times[2];
 	char *tmp_fn;
 	int orig_fd = open(fn, O_RDONLY, 0);
 	if(orig_fd < 0) {
@@ -97,6 +98,14 @@ int unhardlink(char *fn) {
 	if(fchmod(tmp_fd, s.st_mode)) {
 		fprintf(stderr, "%s ", fn);
 		perror("fchmod");
+		goto cleanup;
+	}
+
+	times[0] = s.st_atim;
+	times[1] = s.st_mtim;
+	if (futimens(tmp_fd, times)) {
+		fprintf(stderr, "%s ", fn);
+		perror("futimens");
 		goto cleanup;
 	}
 
