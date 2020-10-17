@@ -24,11 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _GNU_SOURCE 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 int cp(int out_fd, int in_fd) {
 	char b[8192];
@@ -82,6 +85,18 @@ int unhardlink(char *fn) {
 	if(cp(tmp_fd, orig_fd)) {
 		fprintf(stderr, "%s ", fn);
 		perror("copy");
+		goto cleanup;
+	}
+
+	if(fchown(tmp_fd, s.st_uid, s.st_gid)) {
+		fprintf(stderr, "%s ", fn);
+		perror("fchown");
+		goto cleanup;
+	}
+
+	if(fchmod(tmp_fd, s.st_mode)) {
+		fprintf(stderr, "%s ", fn);
+		perror("fchmod");
 		goto cleanup;
 	}
 
