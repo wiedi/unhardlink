@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _GNU_SOURCE 1
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,22 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+
+void fill_timespec_from_stat(struct timespec times[2], struct stat *s) {
+#if defined(HAVE_STRUCT_STAT_ST_ATIM)
+	times[0] = s->st_atim;
+	times[1] = s->st_mtim;
+#elif defined(HAVE_STRUCT_STAT_ST_ATIMESPEC)
+	times[0] = s->st_atimespec;
+	times[1] = s->st_mtimespec;
+#else
+	times[0].tv_sec = s->st_atime;
+	times[0].tv_nsec = 0;
+	times[1].tv_sec = s->st_mtime;
+	times[1].tv_nsec = 0;
+#endif
+}
 
 int cp(int out_fd, int in_fd) {
 	char b[8192];
@@ -101,8 +117,7 @@ int unhardlink(char *fn) {
 		goto cleanup;
 	}
 
-	times[0] = s.st_atim;
-	times[1] = s.st_mtim;
+	fill_timespec_from_stat(times, &s);
 	if (futimens(tmp_fd, times)) {
 		fprintf(stderr, "%s ", fn);
 		perror("futimens");
